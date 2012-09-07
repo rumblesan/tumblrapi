@@ -1,13 +1,17 @@
-name := "tumblr_scala_api"
+name := "tumblr scala api"
 
 organization := "com.rumblesan"
 
 version := "0.1"
 
-scalaVersion := "2.9.2"
+scalaVersion := "2.9.1"
 
 libraryDependencies ++= Seq(
-  "org.specs2" %% "specs2" % "1.12" % "test"
+  "org.specs2" %% "specs2" % "1.12" % "test",
+  "org.scribe" % "scribe" % "1.1.2",
+  "com.codahale" %% "jerkson" % "0.5.0"
 )
 
-initialCommands := "import com.rumblesan.tumblr_scala_api._"
+resolvers += "repo.codahale.com" at "http://repo.codahale.com"
+
+initialCommands := "import com.rumblesan.tumblr.api._"
