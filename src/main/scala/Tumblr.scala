@@ -35,6 +35,32 @@ class TumblrAuthenticate(apiKey:String, apiSecret:String) {
 
 }
 
+object TumblrAPI {
+  val apiBase = "http://api.tumblr.com"
+  val apiVersion = "v2"
+  val apiUrl = "%s/%s".format(apiBase, apiVersion)
+
+  import java.net.URLEncoder.encode
+
+  def encodeParams(params:Map[String,String]) = {
+    params.map (
+      (keyVal) => {
+        encode(keyVal._1, "UTF-8") + "=" + encode(keyVal._2, "UTF-8")
+      }
+    ).foldLeft("")(_ + _)
+  }
+
+  def addBodyParams(request:OAuthRequest, params:Map[String,String]) {
+    params.foldLeft(request)(
+      (request, keyVal) => {
+        request.addBodyParameter(keyVal._1, keyVal._2)
+        request
+      }
+    )
+  }
+
+}
+
 class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:String) {
 
   val accessToken = new Token(oauthToken, oauthSecret)
@@ -45,16 +71,45 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
                     .apiSecret(apiSecret)
                     .build()
 
-  def getInfo(blogName:String):String = {
-    val url = "http://api.tumblr.com/v2/blog/%s/followers".format(blogName)
+  val defaultParams = Map("api_key" -> apiKey)
 
-    val request = new OAuthRequest(Verb.GET, url)
-    service.signRequest(accessToken, request)
-    val response = request.send()
+  def apiRequest(endpoint:String,
+                 blogUrl:String = "",
+                 method:String = "GET",
+                 params:Map[String,String] = Map.empty[String,String],
+                 files:List[String] = Nil) = {
 
-    return response.getBody()
+    val url = if (blogUrl.isEmpty) {
+      "%s/%s".format(TumblrAPI.apiUrl, endpoint)
+    } else {
+      "%s/blog/%s/%s".format(TumblrAPI.apiUrl, blogUrl, endpoint)
+    }
+    println(url)
+
+    val reqParams = defaultParams ++ params
+
+    method match {
+      case "GET" => {
+        val reqUrl = "%s?%s".format(url, TumblrAPI.encodeParams(reqParams))
+        println(reqUrl)
+        val request = new OAuthRequest(Verb.GET, reqUrl)
+        service.signRequest(accessToken, request)
+        val response = request.send()
+        response.getBody()
+      }
+      case "POST" => {
+        val request = new OAuthRequest(Verb.GET, url)
+        TumblrAPI.addBodyParams(request, reqParams)
+        service.signRequest(accessToken, request)
+        val response = request.send()
+        response.getBody()
+      }
+      case _ => {
+        "Not Supported"
+      }
+    }
+
   }
-
 
 }
 
