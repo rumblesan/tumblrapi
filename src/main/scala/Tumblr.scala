@@ -69,21 +69,19 @@ object TumblrAPI {
     */
   def uploadFile(request:OAuthRequest, fileData:Array[Byte]) = {
     val boundary = generateBoundaryString()
-
-    val bodyParamsEncoded = request.getBodyParams().asFormUrlEncodedString
     val sectionStart = "--%s\r\n".format(boundary)
 
-    val decodedParams = bodyParamsEncoded.split("&").foldLeft(Map.empty[String,String])(
+    val bodyParamsEncoded = request.getBodyParams().asFormUrlEncodedString
+
+    val allParams = bodyParamsEncoded.split("&").foldLeft(Map.empty[String,String])(
       (total, current) => {
         val values = current.split("=")
         total + (decode(values(0), CHARSET) -> decode(values(1), CHARSET))
       }
     )
 
-    val allParams = decodedParams ++ request.getOauthParameters()
-
     val formData = allParams.foldLeft("")(
-      (buffer, keyVal) => {
+      (formData, keyVal) => {
         val (fieldName, fieldValue) = keyVal
 
         val data = sectionStart ++
@@ -93,7 +91,7 @@ object TumblrAPI {
                    fieldValue ++
                    "\r\n"
 
-        buffer ++ data
+        formData ++ data
       }
     )
 
@@ -104,29 +102,17 @@ object TumblrAPI {
                    "\r\n" ++
                    "Content-Type: image/jpeg\r\n\r\n"
 
-    val bodyData = formData.getBytes ++ fileForm.getBytes ++ fileData ++ "\r\n--%s--\r\n".format(boundary).getBytes
+    val bodyData = formData.getBytes ++
+                   fileForm.getBytes ++
+                   fileData ++
+                   "\r\n--%s--\r\n".format(boundary).getBytes
 
     request.addPayload(bodyData)
 
     request.addHeader("Content-Type", "multipart/form-data; boundary=" + boundary)
     request.addHeader("Content-Length", bodyData.length.toString)
 
-    val reqUrl     = request.getCompleteUrl()
-    val reqHeaders = request.getHeaders() - "Authorization"
-    val reqBody    = request.getBodyContents()
-
-    val newRequest = new BasicRequest(request.getVerb(), reqUrl)
-
-    reqHeaders.foldLeft(newRequest)(
-      (request, keyVals) => {
-        request.addHeader(keyVals._1, keyVals._2)
-        request
-      }
-    )
-
-    newRequest.addPayload(reqBody)
-
-    newRequest.send().getBody()
+    request.send().getBody()
   }
 
   def generateBoundaryString() = {
