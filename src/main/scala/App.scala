@@ -1,7 +1,11 @@
-package com.rumblesan.tumblr_scala_api
+package com.rumblesan.tumblr.api
 
 object App {
   def main(args: Array[String]) {
-    print("Hello com.rumblesan.tumblr_scala_api!")
+    val apiKey    = ""
+    val apiSecret = ""
+
+    val tumblrAuth = new TumblrAuthenticate(apiKey, apiSecret)
+    tumblrAuth.getAccessToken()
   }
 }
