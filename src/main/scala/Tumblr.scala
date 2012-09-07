@@ -7,6 +7,8 @@ import org.scribe.oauth._
 
 import com.codahale.jerkson.Json._
 
+import scala.collection.JavaConversions._
+
 class TumblrAuthenticate(apiKey:String, apiSecret:String) {
 
     val service:OAuthService = new ServiceBuilder()
@@ -40,12 +42,15 @@ object TumblrAPI {
   val apiVersion = "v2"
   val apiUrl = "%s/%s".format(apiBase, apiVersion)
 
+  val CHARSET = "UTF-8"
+
   import java.net.URLEncoder.encode
+  import java.net.URLDecoder.decode
 
   def encodeParams(params:Map[String,String]) = {
     params.map (
       (keyVal) => {
-        encode(keyVal._1, "UTF-8") + "=" + encode(keyVal._2, "UTF-8")
+        encode(keyVal._1, CHARSET) + "=" + encode(keyVal._2, CHARSET)
       }
     ).foldLeft("")(_ + _)
   }
@@ -59,6 +64,74 @@ object TumblrAPI {
     )
   }
 
+  /** Much of this is from
+    * https://github.com/Frostman/dropbox4j/blob/master/src/main/java/ru/frostman/dropbox/api/util/Multipart.java
+    */
+  def uploadFile(request:OAuthRequest, fileData:Array[Byte]) = {
+    val boundary = generateBoundaryString()
+
+    val bodyParamsEncoded = request.getBodyParams().asFormUrlEncodedString
+    val sectionStart = "--%s\r\n".format(boundary)
+
+    val decodedParams = bodyParamsEncoded.split("&").foldLeft(Map.empty[String,String])(
+      (total, current) => {
+        val values = current.split("=")
+        total + (decode(values(0), CHARSET) -> decode(values(1), CHARSET))
+      }
+    )
+
+    val allParams = decodedParams ++ request.getOauthParameters()
+
+    val formData = allParams.foldLeft("")(
+      (buffer, keyVal) => {
+        val (fieldName, fieldValue) = keyVal
+
+        val data = sectionStart ++
+                   """Content-Disposition: form-data; name="%s"""".format(fieldName) ++
+                   "\r\n" ++
+                   "Content-Type: text/plain\r\n\r\n" ++
+                   fieldValue ++
+                   "\r\n"
+
+        buffer ++ data
+      }
+    )
+
+    // For files, the field name is always data
+    val fileForm = sectionStart ++
+                   """Content-Disposition: form-data; name="%s"; """.format("data") ++
+                   """filename="%s"""".format("upload.jpeg") ++
+                   "\r\n" ++
+                   "Content-Type: image/jpeg\r\n\r\n"
+
+    val bodyData = formData.getBytes ++ fileForm.getBytes ++ fileData ++ "\r\n--%s--\r\n".format(boundary).getBytes
+
+    request.addPayload(bodyData)
+
+    request.addHeader("Content-Type", "multipart/form-data; boundary=" + boundary)
+    request.addHeader("Content-Length", bodyData.length.toString)
+
+    val reqUrl     = request.getCompleteUrl()
+    val reqHeaders = request.getHeaders() - "Authorization"
+    val reqBody    = request.getBodyContents()
+
+    val newRequest = new BasicRequest(request.getVerb(), reqUrl)
+
+    reqHeaders.foldLeft(newRequest)(
+      (request, keyVals) => {
+        request.addHeader(keyVals._1, keyVals._2)
+        request
+      }
+    )
+
+    newRequest.addPayload(reqBody)
+
+    newRequest.send().getBody()
+  }
+
+  def generateBoundaryString() = {
+    "THISISTHEBOUNDaRYSTRINGITSCRAPFORTHEMOMENTERGERERGERGERG"
+  }
 }
 
 class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:String) {
@@ -77,7 +150,7 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
                  blogUrl:String = "",
                  method:String = "GET",
                  params:Map[String,String] = Map.empty[String,String],
-                 files:List[String] = Nil) = {
+                 fileData:Array[Byte] = Array.empty[Byte]) = {
 
     val url = if (blogUrl.isEmpty) {
       "%s/%s".format(TumblrAPI.apiUrl, endpoint)
@@ -98,11 +171,21 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
         response.getBody()
       }
       case "POST" => {
-        val request = new OAuthRequest(Verb.GET, url)
+        val request = new OAuthRequest(Verb.POST, url)
         TumblrAPI.addBodyParams(request, reqParams)
         service.signRequest(accessToken, request)
-        val response = request.send()
-        response.getBody()
+
+        // If there is a file to upload then shenanigans need to happen
+        // We need to take the signed request params amd use them with
+        // a new request, but one with the params and data as multipart
+        // form data
+        if (fileData.length != 0) {
+          TumblrAPI.uploadFile(request, fileData)
+        } else {
+          val response = request.send()
+          response.getBody()
+        }
+
       }
       case _ => {
         "Not Supported"
