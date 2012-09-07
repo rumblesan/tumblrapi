@@ -14,7 +14,7 @@ class TumblrAuthenticate(apiKey:String, apiSecret:String) {
                                    .apiKey(apiKey)
                                    .apiSecret(apiSecret)
                                    .build()
-    def getAccessToken() {
+    def getAccessToken() = {
       import java.util.Scanner
 
       val requestToken = service.getRequestToken()
@@ -44,6 +44,16 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
                     .apiKey(apiKey)
                     .apiSecret(apiSecret)
                     .build()
+
+  def getInfo(blogName:String):String = {
+    val url = "http://api.tumblr.com/v2/blog/%s/followers".format(blogName)
+
+    val request = new OAuthRequest(Verb.GET, url)
+    service.signRequest(accessToken, request)
+    val response = request.send()
+
+    return response.getBody()
+  }
 
 
 }
