@@ -15,3 +15,6 @@ libraryDependencies ++= Seq(
 resolvers += "repo.codahale.com" at "http://repo.codahale.com"
 
 initialCommands := "import com.rumblesan.tumblr.api._"
+
+scalacOptions += "-deprecation"
+
