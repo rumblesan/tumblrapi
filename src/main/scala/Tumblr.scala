@@ -82,12 +82,15 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
 
   val defaultParams = Map("api_key" -> apiKey)
 
-  def getAuthorizationUrl() = {
-      val requestToken = service.getRequestToken()
-      service.getAuthorizationUrl(requestToken)
+  def getRequestToken() = {
+    service.getRequestToken()
   }
 
-  def getAuthorizationUrl(verifcationString:String) = {
+  def getAuthorizationUrl(requestToken:Token) = {
+    service.getAuthorizationUrl(requestToken)
+  }
+
+  def getAuthorizationUrl(requestToken:Token, verifcationString:String) = {
       val verifier = new Verifier(verifcationString)
       service.getAccessToken(requestToken, verifier)
   }
