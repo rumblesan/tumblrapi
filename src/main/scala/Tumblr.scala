@@ -156,5 +156,20 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
 
   }
 
+  def get(endpoint:String,
+          blogUrl:String = "",
+          params:Map[String,String] = Map.empty[String,String]) = {
+
+    apiRequest(endpoint, blogUrl, "GET", params)
+  }
+
+  def post(endpoint:String,
+           blogUrl:String = "",
+           params:Map[String,String] = Map.empty[String,String],
+           fileData:Array[Byte] = Array.empty[Byte]) = {
+
+    apiRequest(endpoint, blogUrl, "POST", params, fileData)
+  }
+
 }
 
