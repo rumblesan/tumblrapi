@@ -42,8 +42,6 @@ object TumblrAPI {
   val apiVersion = "v2"
   val apiUrl = "%s/%s".format(apiBase, apiVersion)
 
-  val CHARSET = "UTF-8"
-
   def addQueryParams(request:OAuthRequest, params:Map[String,String]) = {
     params.foldLeft(request)(
       (request, keyVal) => {
