@@ -44,14 +44,13 @@ object TumblrAPI {
 
   val CHARSET = "UTF-8"
 
-  import java.net.URLEncoder.encode
-
-  def encodeParams(params:Map[String,String]) = {
-    params.map (
-      (keyVal) => {
-        encode(keyVal._1, CHARSET) + "=" + encode(keyVal._2, CHARSET)
+  def addQueryParams(request:OAuthRequest, params:Map[String,String]) = {
+    params.foldLeft(request)(
+      (request, keyVal) => {
+        request.addQuerystringParameter(keyVal._1, keyVal._2)
+        request
       }
-    ).foldLeft("")(_ + _)
+    )
   }
 
   def addBodyParams(request:OAuthRequest, params:Map[String,String]) {
@@ -133,16 +132,16 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
     } else {
       "%s/blog/%s/%s".format(TumblrAPI.apiUrl, blogUrl, endpoint)
     }
-    println(url)
 
     val reqParams = defaultParams ++ params
 
     method match {
       case "GET" => {
-        val reqUrl = "%s?%s".format(url, TumblrAPI.encodeParams(reqParams))
-        println(reqUrl)
-        val request = new OAuthRequest(Verb.GET, reqUrl)
+
+        val request = new OAuthRequest(Verb.GET, url)
+        TumblrAPI.addQueryParams(request, reqParams)
         service.signRequest(accessToken, request)
+
         val response = request.send()
         response.getBody()
       }
