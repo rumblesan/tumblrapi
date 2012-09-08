@@ -38,9 +38,9 @@ class TumblrAuthenticate(apiKey:String, apiSecret:String) {
 }
 
 object TumblrAPI {
-  val apiBase = "http://api.tumblr.com"
+  val apiBase    = "http://api.tumblr.com"
   val apiVersion = "v2"
-  val apiUrl = "%s/%s".format(apiBase, apiVersion)
+  val apiUrl     = "%s/%s".format(apiBase, apiVersion)
 
   def addQueryParams(request:OAuthRequest, params:Map[String,String]) = {
     params.foldLeft(request)(
@@ -60,25 +60,21 @@ object TumblrAPI {
     )
   }
 
-  /** Much of this is from
-    * https://github.com/Frostman/dropbox4j/blob/master/src/main/java/ru/frostman/dropbox/api/util/Multipart.java
-    */
-  def uploadFile(request:OAuthRequest, reqParams:Map[String,String], fileData:Array[Byte]) = {
-    val boundary = generateBoundaryString()
+  def uploadFile(request:OAuthRequest, params:Map[String,String], fileData:Array[Byte]) = {
+    val boundary     = generateBoundaryString()
     val sectionStart = "--%s\r\n".format(boundary)
 
-    val formData = reqParams.foldLeft("")(
+    val formData = params.foldLeft("")(
       (formData, keyVal) => {
         val (fieldName, fieldValue) = keyVal
 
-        val data = sectionStart ++
-                   """Content-Disposition: form-data; name="%s"""".format(fieldName) ++
-                   "\r\n" ++
-                   "Content-Type: text/plain\r\n\r\n" ++
-                   fieldValue ++
-                   "\r\n"
-
-        formData ++ data
+        formData ++
+        sectionStart ++
+        """Content-Disposition: form-data; name="%s"""".format(fieldName) ++
+        "\r\n" ++
+        "Content-Type: text/plain\r\n\r\n" ++
+        fieldValue ++
+        "\r\n"
       }
     )
 
