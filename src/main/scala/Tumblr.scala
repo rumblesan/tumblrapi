@@ -1,26 +1,20 @@
 package com.rumblesan.tumblr.api
 
-import org.scribe.builder._
-import org.scribe.builder.api._
-import org.scribe.model._
-import org.scribe.oauth._
+import org.scribe.builder.ServiceBuilder
+import org.scribe.builder.api.TumblrApi
+import org.scribe.model.{Token, OAuthRequest, Verifier, Verb}
 
-import java.util.UUID
-
-import com.codahale.jerkson.Json._
-
-import scala.collection.JavaConversions._
+import java.util.{UUID, Scanner}
 
 class TumblrAuthenticate(apiKey:String, apiSecret:String) {
 
-    val service:OAuthService = new ServiceBuilder()
-                                   .provider(classOf[TumblrApi])
-                                   .apiKey(apiKey)
-                                   .apiSecret(apiSecret)
-                                   .build()
-    def getAccessToken() = {
-      import java.util.Scanner
+    val service = new ServiceBuilder()
+                      .provider(classOf[TumblrApi])
+                      .apiKey(apiKey)
+                      .apiSecret(apiSecret)
+                      .build()
 
+    def getAccessToken() = {
       val requestToken = service.getRequestToken()
 
       println("Go to the following URL to authorize")
