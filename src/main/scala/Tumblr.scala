@@ -5,6 +5,8 @@ import org.scribe.builder.api._
 import org.scribe.model._
 import org.scribe.oauth._
 
+import java.util.UUID
+
 import com.codahale.jerkson.Json._
 
 import scala.collection.JavaConversions._
@@ -99,7 +101,7 @@ object TumblrAPI {
   }
 
   def generateBoundaryString() = {
-    "THISISTHEBOUNDaRYSTRINGITSCRAPFORTHEMOMENTERGERERGERGERG"
+    UUID.randomUUID
   }
 }
 
