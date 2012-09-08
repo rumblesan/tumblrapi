@@ -6,33 +6,6 @@ import org.scribe.model.{Token, OAuthRequest, Verifier, Verb}
 
 import java.util.{UUID, Scanner}
 
-class TumblrAuthenticate(apiKey:String, apiSecret:String) {
-
-    val service = new ServiceBuilder()
-                      .provider(classOf[TumblrApi])
-                      .apiKey(apiKey)
-                      .apiSecret(apiSecret)
-                      .build()
-
-    def getAccessToken() = {
-      val requestToken = service.getRequestToken()
-
-      println("Go to the following URL to authorize")
-      println(service.getAuthorizationUrl(requestToken))
-      println("Then paste the verifier back here")
-
-      val in       = new Scanner(System.in)
-      val verifier = new Verifier(in.nextLine())
-
-      val accessToken = service.getAccessToken(requestToken, verifier)
-
-      println("Here's the access token")
-      println(accessToken)
-
-    }
-
-}
-
 object TumblrAPI {
   val apiBase    = "http://api.tumblr.com"
   val apiVersion = "v2"
@@ -108,6 +81,16 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
                     .build()
 
   val defaultParams = Map("api_key" -> apiKey)
+
+  def getAuthorizationUrl() = {
+      val requestToken = service.getRequestToken()
+      service.getAuthorizationUrl(requestToken)
+  }
+
+  def getAuthorizationUrl(verifcationString:String) = {
+      val verifier = new Verifier(verifcationString)
+      service.getAccessToken(requestToken, verifier)
+  }
 
   def apiRequest(endpoint:String,
                  blogUrl:String = "",
