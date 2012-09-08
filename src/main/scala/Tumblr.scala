@@ -56,7 +56,7 @@ object TumblrAPI {
     )
   }
 
-  def uploadFile(request:OAuthRequest, params:Map[String,String], fileData:Array[Byte]) = {
+  def addMultiPartFormParams(request:OAuthRequest, params:Map[String,String], fileData:Array[Byte]) = {
     val boundary     = generateBoundaryString()
     val sectionStart = "--%s\r\n".format(boundary)
 
@@ -90,8 +90,6 @@ object TumblrAPI {
 
     request.addHeader("Content-Type", "multipart/form-data; boundary=" + boundary)
     request.addHeader("Content-Length", bodyData.length.toString)
-
-    request.send().getBody()
   }
 
   def generateBoundaryString() = {
@@ -140,17 +138,16 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
         TumblrAPI.addBodyParams(request, reqParams)
         service.signRequest(accessToken, request)
 
-        // If there is a file to upload then shenanigans need to happen
-        // We need to take the signed request params amd use them with
-        // a new request, but one with the params and data as multipart
-        // form data
-        if (fileData.length != 0) {
-          TumblrAPI.uploadFile(request, reqParams, fileData)
+        // If there is a file to upload then we need to add the file data
+        // and any parameters to the request as multipart form data
+        val response = if (fileData.length != 0) {
+          TumblrAPI.addMultiPartFormParams(request, reqParams, fileData)
+          request.send()
         } else {
-          val response = request.send()
-          response.getBody()
+          request.send()
         }
 
+        response.getBody()
       }
       case _ => {
         "Not Supported"
