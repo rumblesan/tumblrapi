@@ -45,7 +45,6 @@ object TumblrAPI {
   val CHARSET = "UTF-8"
 
   import java.net.URLEncoder.encode
-  import java.net.URLDecoder.decode
 
   def encodeParams(params:Map[String,String]) = {
     params.map (
@@ -67,20 +66,11 @@ object TumblrAPI {
   /** Much of this is from
     * https://github.com/Frostman/dropbox4j/blob/master/src/main/java/ru/frostman/dropbox/api/util/Multipart.java
     */
-  def uploadFile(request:OAuthRequest, fileData:Array[Byte]) = {
+  def uploadFile(request:OAuthRequest, reqParams:Map[String,String], fileData:Array[Byte]) = {
     val boundary = generateBoundaryString()
     val sectionStart = "--%s\r\n".format(boundary)
 
-    val bodyParamsEncoded = request.getBodyParams().asFormUrlEncodedString
-
-    val allParams = bodyParamsEncoded.split("&").foldLeft(Map.empty[String,String])(
-      (total, current) => {
-        val values = current.split("=")
-        total + (decode(values(0), CHARSET) -> decode(values(1), CHARSET))
-      }
-    )
-
-    val formData = allParams.foldLeft("")(
+    val formData = reqParams.foldLeft("")(
       (formData, keyVal) => {
         val (fieldName, fieldValue) = keyVal
 
@@ -166,7 +156,7 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
         // a new request, but one with the params and data as multipart
         // form data
         if (fileData.length != 0) {
-          TumblrAPI.uploadFile(request, fileData)
+          TumblrAPI.uploadFile(request, reqParams, fileData)
         } else {
           val response = request.send()
           response.getBody()
