@@ -14,7 +14,7 @@ object TumblrAPI {
   val apiVersion = "v2"
   val apiUrl     = "%s/%s".format(apiBase, apiVersion)
 
-  def addQueryParams(request:OAuthRequest, params:Map[String,String]) = {
+  def addQueryParams(request:OAuthRequest, params:Map[String,String]):Unit = {
     params.foldLeft(request)(
       (request, keyVal) => {
         request.addQuerystringParameter(keyVal._1, keyVal._2)
@@ -23,7 +23,7 @@ object TumblrAPI {
     )
   }
 
-  def addBodyParams(request:OAuthRequest, params:Map[String,String]) {
+  def addBodyParams(request:OAuthRequest, params:Map[String,String]):Unit = {
     params.foldLeft(request)(
       (request, keyVal) => {
         request.addBodyParameter(keyVal._1, keyVal._2)
@@ -32,7 +32,9 @@ object TumblrAPI {
     )
   }
 
-  def addMultiPartFormParams(request:OAuthRequest, params:Map[String,String], fileData:Array[Byte]) = {
+  def addMultiPartFormParams(request:OAuthRequest,
+                             params:Map[String,String],
+                             fileData:Array[Byte]):Unit = {
     val boundary     = generateBoundaryString()
     val sectionStart = "--%s\r\n".format(boundary)
 
@@ -68,11 +70,11 @@ object TumblrAPI {
     request.addHeader("Content-Length", bodyData.length.toString)
   }
 
-  def generateBoundaryString() = {
-    UUID.randomUUID
+  def generateBoundaryString():String = {
+    UUID.randomUUID.toString
   }
 
-  def parseApiGetResponse(jsonData:String, postType:String) = {
+  def parseApiGetResponse(jsonData:String, postType:String = ""):Option[TumblrApiResponse] = {
     val firstParse = parse[TumblrResponse](jsonData)
     firstParse.meta.status match {
       case 404 => None
@@ -87,7 +89,7 @@ object TumblrAPI {
     }
   }
 
-  def parseApiPostResponse(jsonData:String) = {
+  def parseApiPostResponse(jsonData:String):Option[TumblrApiResponse] = {
     val firstParse = parse[TumblrResponse](jsonData)
     firstParse.meta.status match {
       case 404 => None
@@ -115,15 +117,15 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
 
   val defaultParams = Map("api_key" -> apiKey)
 
-  def getRequestToken() = {
+  def getRequestToken():Token = {
     service.getRequestToken()
   }
 
-  def getAuthorizationUrl(requestToken:Token) = {
+  def getAuthorizationUrl(requestToken:Token):String = {
     service.getAuthorizationUrl(requestToken)
   }
 
-  def getAuthorizationUrl(requestToken:Token, verifcationString:String) = {
+  def getAccessToken(requestToken:Token, verifcationString:String):Token = {
       val verifier = new Verifier(verifcationString)
       service.getAccessToken(requestToken, verifier)
   }
@@ -132,7 +134,7 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
                  blogUrl:String = "",
                  method:String = "GET",
                  params:Map[String,String] = Map.empty[String,String],
-                 fileData:Array[Byte] = Array.empty[Byte]) = {
+                 fileData:Array[Byte] = Array.empty[Byte]):Option[String] = {
 
     val url = if (blogUrl.isEmpty) {
       "%s/%s".format(TumblrAPI.apiUrl, endpoint)
@@ -174,22 +176,24 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
     }
 
     response.filter(_.isSuccessful).map(_.getBody())
-
   }
 
   def get(endpoint:String,
           blogUrl:String = "",
-          params:Map[String,String] = Map.empty[String,String]) = {
+          params:Map[String,String] = Map.empty[String,String]):Option[TumblrApiResponse] = {
 
-    apiRequest(endpoint, blogUrl, "GET", params)
+    val apiResponse = apiRequest(endpoint, blogUrl, "GET", params)
+    val postType = params.getOrElse("type", "any")
+    apiResponse.flatMap(TumblrAPI.parseApiGetResponse(_, postType))
   }
 
   def post(endpoint:String,
            blogUrl:String = "",
            params:Map[String,String] = Map.empty[String,String],
-           fileData:Array[Byte] = Array.empty[Byte]) = {
+           fileData:Array[Byte] = Array.empty[Byte]):Option[TumblrApiResponse] = {
 
-    apiRequest(endpoint, blogUrl, "POST", params, fileData)
+    val apiResponse = apiRequest(endpoint, blogUrl, "POST", params, fileData)
+    apiResponse.flatMap(TumblrAPI.parseApiPostResponse(_))
   }
 
 }
