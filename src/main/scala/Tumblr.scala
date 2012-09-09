@@ -3,6 +3,7 @@ package com.rumblesan.tumblr.api
 import org.scribe.builder.ServiceBuilder
 import org.scribe.builder.api.TumblrApi
 import org.scribe.model.{Token, OAuthRequest, Verifier, Verb}
+import org.scribe.exceptions._
 
 import com.codahale.jerkson.Json._
 
@@ -141,15 +142,13 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
 
     val reqParams = defaultParams ++ params
 
-    method match {
+    val request = method match {
       case "GET" => {
 
         val request = new OAuthRequest(Verb.GET, url)
         TumblrAPI.addQueryParams(request, reqParams)
         service.signRequest(accessToken, request)
-
-        val response = request.send()
-        response.getBody()
+        Some(request)
       }
       case "POST" => {
         val request = new OAuthRequest(Verb.POST, url)
@@ -160,17 +159,21 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
         // and any parameters to the request as multipart form data
         val response = if (fileData.length != 0) {
           TumblrAPI.addMultiPartFormParams(request, reqParams, fileData)
-          request.send()
-        } else {
-          request.send()
         }
-
-        response.getBody()
+        Some(request)
       }
       case _ => {
-        "Not Supported"
+        None
       }
     }
+
+    val response = try {
+      request.map(_.send())
+    } catch {
+      case oce:OAuthConnectionException => None
+    }
+
+    response.filter(_.isSuccessful).map(_.getBody())
 
   }
 
