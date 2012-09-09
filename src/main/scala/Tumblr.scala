@@ -4,6 +4,8 @@ import org.scribe.builder.ServiceBuilder
 import org.scribe.builder.api.TumblrApi
 import org.scribe.model.{Token, OAuthRequest, Verifier, Verb}
 
+import com.codahale.jerkson.Json._
+
 import java.util.{UUID, Scanner}
 
 object TumblrAPI {
@@ -68,6 +70,36 @@ object TumblrAPI {
   def generateBoundaryString() = {
     UUID.randomUUID
   }
+
+  def parseApiGetResponse(jsonData:String, postType:String) = {
+    val firstParse = parse[TumblrResponse](jsonData)
+    firstParse.meta.status match {
+      case 404 => None
+      case 200 => {
+        postType match {
+          case "info" => parse[TumblrInfoQueryResponse](jsonData).response
+          case "photo" => parse[TumblrPhotoQueryResponse](jsonData).response
+          case _ => parse[TumblrAnyQueryResponse](jsonData).response
+        }
+      }
+      case _ => None
+    }
+  }
+
+  def parseApiPostResponse(jsonData:String) = {
+    val firstParse = parse[TumblrResponse](jsonData)
+    firstParse.meta.status match {
+      case 404 => None
+      case 201 => {
+        parse[TumblrPostResponse](jsonData).response
+      }
+      case 200 => {
+        parse[TumblrPostResponse](jsonData).response
+      }
+      case _ => None
+    }
+  }
+
 }
 
 class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:String) {
