@@ -38,15 +38,18 @@ case class PhotoQuery(blog:BlogInfo, posts:List[PhotoPost], total_posts:Int) ext
 case class PhotoPost(blog_name:String,
                      id:Long,
                      post_url:String,
+                     slug:String,
                      `type`:String,
                      date:String,
                      timestamp:Long,
+                     state:String,
                      format:String,
                      reblog_key:String,
                      tags:List[String],
-                     note_count:Int,
+                     liked:Boolean,
                      caption:String,
-                     photos:List[Photo])
+                     photos:List[Photo],
+                     can_reply:Boolean)
 case class Photo(caption:String, alt_sizes:List[PhotoSizes])
 case class PhotoSizes(width:Int, height:Int, url:String)
 
