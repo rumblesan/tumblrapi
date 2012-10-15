@@ -5,8 +5,6 @@ import org.scribe.builder.api.TumblrApi
 import org.scribe.model.{Token, OAuthRequest, Verifier, Verb}
 import org.scribe.exceptions._
 
-import com.codahale.jerkson.Json._
-
 import java.util.{UUID, Scanner}
 
 /** This is the TumblrAPI companion object
@@ -106,55 +104,6 @@ object TumblrAPI {
     */
   def generateBoundaryString():String = {
     UUID.randomUUID.toString
-  }
-
-  /** Parses the json data response from a GET request and attempts to
-    * fit it into a suitable case class
-    *
-    * @param jsonData The json string returned from the API call
-    * @param postType The type of post the request was for. This is used
-    *                 when parsing the repsonse into specific case classes
-    * @return The response will be an ''Option'' containing a case class that
-    *         extends the ''TumblrApiResponse'' abstract class.
-    *         If the result status from the API is not '''200''' then
-    *         ''None'' will be returned
-    */
-  def parseApiGetResponse(jsonData:String, postType:String = ""):Option[TumblrApiResponse] = {
-    val firstParse = parse[TumblrResponse](jsonData)
-    firstParse.meta.status match {
-      case 404 => None
-      case 200 => {
-        postType match {
-          case "info" => parse[TumblrInfoQueryResponse](jsonData).response
-          case "photo" => parse[TumblrPhotoQueryResponse](jsonData).response
-          case _ => parse[TumblrAnyQueryResponse](jsonData).response
-        }
-      }
-      case _ => None
-    }
-  }
-
-  /** Parses the json data response from a POST request and attempts to
-    * fit it into a suitable case class
-    *
-    * @param jsonData The json string returned from the API call
-    * @return The response will be an ''Option'' containing a
-    *         ''TumblrPostResponse'' case class.
-    *         If the result status from the API is not '''200''' then
-    *         ''None'' will be returned
-    */
-  def parseApiPostResponse(jsonData:String):Option[TumblrApiResponse] = {
-    val firstParse = parse[TumblrResponse](jsonData)
-    firstParse.meta.status match {
-      case 404 => None
-      case 201 => {
-        parse[TumblrPostResponse](jsonData).response
-      }
-      case 200 => {
-        parse[TumblrPostResponse](jsonData).response
-      }
-      case _ => None
-    }
   }
 
 }
@@ -298,11 +247,9 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
     */
   def get(endpoint:String,
           blogUrl:String = "",
-          params:Map[String,String] = Map.empty[String,String]):Option[TumblrApiResponse] = {
+          params:Map[String,String] = Map.empty[String,String]):Option[String] = {
 
-    val apiResponse = apiRequest(endpoint, blogUrl, "GET", params)
-    val postType = params.getOrElse("type", "any")
-    apiResponse.flatMap(TumblrAPI.parseApiGetResponse(_, postType))
+    apiRequest(endpoint, blogUrl, "GET", params)
   }
 
   /** Wraps the apiRequest method for POST requests and parses the response JSON
@@ -319,10 +266,9 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
   def post(endpoint:String,
            blogUrl:String = "",
            params:Map[String,String] = Map.empty[String,String],
-           fileData:Array[Byte] = Array.empty[Byte]):Option[TumblrApiResponse] = {
+           fileData:Array[Byte] = Array.empty[Byte]):Option[String] = {
 
-    val apiResponse = apiRequest(endpoint, blogUrl, "POST", params, fileData)
-    apiResponse.flatMap(TumblrAPI.parseApiPostResponse(_))
+    apiRequest(endpoint, blogUrl, "POST", params, fileData)
   }
 
 }
