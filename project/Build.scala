@@ -11,7 +11,7 @@ object UtilsBuild extends Build {
 
     version := "0.2.0",
 
-    crossScalaVersions := Seq("2.9.2", "2.9.3", "2.10.1")
+    crossScalaVersions := Seq("2.9.2", "2.10.1")
 
   )
 
@@ -22,7 +22,7 @@ object UtilsBuild extends Build {
   def specs2Dependencies(scalaVersion: String) = {
     val Old = """2\.9\..*""".r
     scalaVersion match {
-      case Old() => Seq("org.specs2" %% "specs2" % "1.12.4" % "test")
+      case Old() => Seq("org.specs2" %% "specs2" % "1.12.3" % "test")
       case _ => Seq("org.specs2" %% "specs2" % "1.14" % "test")
     }
   }
@@ -34,6 +34,14 @@ object UtilsBuild extends Build {
     libraryDependencies += scribe
   )
 
+  def scalaCOpts(scalaVersion: String): Seq[String] = {
+    val Old = """2\.9\..*""".r
+    scalaVersion match {
+      case Old() => Seq()
+      case _ => Seq()
+    }
+  }
+
   lazy val utils = Project(
 
     id = "tumblrapi",
@@ -41,8 +49,6 @@ object UtilsBuild extends Build {
 
     settings = Defaults.defaultSettings ++ buildSettings ++ appDependencies
 
-  ).settings(
-    scalacOptions ++= Seq("-deprecation", "-feature", "-language:_")
   )
 
 }
