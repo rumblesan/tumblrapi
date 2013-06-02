@@ -1,4 +1,4 @@
-package com.rumblesan.tumblr.api
+package com.rumblesan.util.tumblrapi
 
 import org.scribe.builder.ServiceBuilder
 import org.scribe.builder.api.TumblrApi
