@@ -7,11 +7,9 @@ object UtilsBuild extends Build {
 
     organization := "com.rumblesan.util",
 
-    scalaVersion := "2.10.1",
+    scalaVersion := "2.10.3",
 
-    version := "0.2.0",
-
-    crossScalaVersions := Seq("2.9.2", "2.10.1")
+    version := "0.2.0"
 
   )
 
