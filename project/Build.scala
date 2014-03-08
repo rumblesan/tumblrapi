@@ -16,10 +16,12 @@ object UtilsBuild extends Build {
 
   lazy val specs2 = "org.specs2" %% "specs2" % "2.3.10" % "test"
   lazy val scribe = "org.scribe" % "scribe" % "1.3.2"
+  lazy val config = "com.typesafe" % "config" % "1.0.1"
 
   lazy val appDependencies = Seq(
     libraryDependencies += specs2,
-    libraryDependencies += scribe
+    libraryDependencies += scribe,
+    libraryDependencies += config
   )
 
 

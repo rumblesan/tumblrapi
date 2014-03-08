@@ -5,6 +5,8 @@ import org.scribe.builder.api.TumblrApi
 import org.scribe.model.{Token, OAuthRequest, Verifier, Verb}
 import org.scribe.exceptions._
 
+import com.typesafe.config.ConfigFactory
+
 import java.util.{UUID, Scanner}
 
 /** This is the TumblrAPI companion object
@@ -13,9 +15,12 @@ import java.util.{UUID, Scanner}
   * parsing the reponses from the API
   */
 object TumblrAPI {
-  val apiBase    = "http://api.tumblr.com"
-  val apiVersion = "v2"
-  val apiUrl     = "%s/%s".format(apiBase, apiVersion)
+
+  val config = ConfigFactory.load()
+
+  val apiBase    = config.getString("api.tumblr.url")
+  val apiVersion = config.getString("api.tumblr.version")
+  val apiUrl     = "http://%s/%s".format(apiBase, apiVersion)
 
   /** Easily adds query parameters to an OAuthRequest class
     *
