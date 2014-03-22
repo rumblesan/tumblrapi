@@ -68,9 +68,11 @@ object TumblrAPI {
     */
   def addMultiPartFormParams(request:OAuthRequest,
                              params:Map[String,String],
-                             fileData:Array[Byte]):Unit = {
+                             fileData:Array[Byte],
+                             fileFormat: Option[String]):Unit = {
     val boundary     = generateBoundaryString()
     val sectionStart = "--%s\r\n".format(boundary)
+    val formatString = fileFormat.getOrElse("jpeg")
 
     val formData = params.foldLeft("")(
       (formData, keyVal) => {
@@ -89,9 +91,9 @@ object TumblrAPI {
     // For files, the field name is always data
     val fileForm = sectionStart ++
                    """Content-Disposition: form-data; name="%s"; """.format("data") ++
-                   """filename="%s"""".format("upload.jpeg") ++
+                   """filename="upload.%s"""".format(formatString) ++
                    "\r\n" ++
-                   "Content-Type: image/jpeg\r\n\r\n"
+                   "Content-Type: image/%s\r\n\r\n".format(formatString)
 
     val bodyData = formData.getBytes ++
                    fileForm.getBytes ++
@@ -196,7 +198,9 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
                  blogUrl:String = "",
                  method:String = "GET",
                  params:Map[String,String] = Map.empty[String,String],
-                 fileData:Array[Byte] = Array.empty[Byte]):Option[String] = {
+                 fileData:Array[Byte] = Array.empty[Byte],
+                 fileFormat: Option[String] = None
+                 ):Option[String] = {
 
     val url = if (blogUrl.isEmpty) {
       "%s/%s".format(TumblrAPI.apiUrl, endpoint)
@@ -222,7 +226,7 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
         // If there is a file to upload then we need to add the file data
         // and any parameters to the request as multipart form data
         val response = if (fileData.length != 0) {
-          TumblrAPI.addMultiPartFormParams(request, reqParams, fileData)
+          TumblrAPI.addMultiPartFormParams(request, reqParams, fileData, fileFormat)
         }
         Some(request)
       }
