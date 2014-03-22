@@ -69,10 +69,9 @@ object TumblrAPI {
   def addMultiPartFormParams(request:OAuthRequest,
                              params:Map[String,String],
                              fileData:Array[Byte],
-                             fileFormat: Option[String]):Unit = {
+                             fileFormat: String):Unit = {
     val boundary     = generateBoundaryString()
     val sectionStart = "--%s\r\n".format(boundary)
-    val formatString = fileFormat.getOrElse("jpeg")
 
     val formData = params.foldLeft("")(
       (formData, keyVal) => {
@@ -91,9 +90,9 @@ object TumblrAPI {
     // For files, the field name is always data
     val fileForm = sectionStart ++
                    """Content-Disposition: form-data; name="%s"; """.format("data") ++
-                   """filename="upload.%s"""".format(formatString) ++
+                   """filename="upload.%s"""".format(fileFormat) ++
                    "\r\n" ++
-                   "Content-Type: image/%s\r\n\r\n".format(formatString)
+                   "Content-Type: image/%s\r\n\r\n".format(fileFormat)
 
     val bodyData = formData.getBytes ++
                    fileForm.getBytes ++
@@ -199,7 +198,7 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
                  method:String = "GET",
                  params:Map[String,String] = Map.empty[String,String],
                  fileData:Array[Byte] = Array.empty[Byte],
-                 fileFormat: Option[String] = None
+                 fileFormat: String = "jpeg"
                  ):Option[String] = {
 
     val url = if (blogUrl.isEmpty) {
@@ -275,9 +274,11 @@ class TumblrAPI(apiKey:String, apiSecret:String, oauthToken:String, oauthSecret:
   def post(endpoint:String,
            blogUrl:String = "",
            params:Map[String,String] = Map.empty[String,String],
-           fileData:Array[Byte] = Array.empty[Byte]):Option[String] = {
+           fileData:Array[Byte] = Array.empty[Byte],
+           fileFormat: String = "jpeg"
+           ):Option[String] = {
 
-    apiRequest(endpoint, blogUrl, "POST", params, fileData)
+    apiRequest(endpoint, blogUrl, "POST", params, fileData, fileFormat)
   }
 
 }
